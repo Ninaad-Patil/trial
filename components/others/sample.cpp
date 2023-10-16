@@ -1,102 +1,209 @@
-#include <iostream>
-#include <vector>
-#include <string>
+#include <QApplication>
+
+#include <QMainWindow>
+
+#include <QTextEdit>
+
+#include <QMenuBar>
+
+#include <QMenu>
+
+#include <QAction>
+
+#include <QFileDialog>
 
  
 
-struct Task {
-    std::string description;
-    bool completed;
+class TextEditor : public QMainWindow {
+
+   Q_OBJECT
+
+ 
+
+public:
+
+   TextEditor(QWidget *parent = 0) : QMainWindow(parent) {
+
+       textEdit = new QTextEdit(this);
+
+       setCentralWidget(textEdit);
+
+ 
+
+       createActions();
+
+       createMenus();
+
+ 
+
+       setWindowTitle("Simple Text Editor");
+
+       resize(800, 600);
+
+   }
+
+ 
+
+private slots:
+
+   void newFile() {
+
+       textEdit->clear();
+
+       currentFile.clear();
+
+   }
+
+ 
+
+   void open() {
+
+       QString fileName = QFileDialog::getOpenFileName(this, "Open File", "", "Text Files (*.txt);;All Files (*)");
+
+       if (!fileName.isEmpty()) {
+
+           QFile file(fileName);
+
+           if (file.open(QFile::ReadOnly | QFile::Text)) {
+
+               QTextStream in(&file);
+
+               textEdit->setPlainText(in.readAll());
+
+               currentFile = fileName;
+
+           }
+
+       }
+
+   }
+
+ 
+
+   void save() {
+
+       if (currentFile.isEmpty()) {
+
+           saveAs();
+
+       } else {
+
+           QFile file(currentFile);
+
+           if (file.open(QFile::WriteOnly | QFile::Text)) {
+
+               QTextStream out(&file);
+
+               out << textEdit->toPlainText();
+
+           }
+
+       }
+
+  }
+
+ 
+
+   void saveAs() {
+
+       QString fileName = QFileDialog::getSaveFileName(this, "Save As", "", "Text Files (*.txt);;All Files (*)");
+
+       if (!fileName.isEmpty()) {
+
+           currentFile = fileName;
+
+           save();
+
+       }
+
+   }
+
+ 
+
+private:
+
+   void createActions() {
+
+       newAction = new QAction(tr("&New"), this);
+
+       newAction->setShortcuts(QKeySequence::New);
+
+       connect(newAction, &QAction::triggered, this, &TextEditor::newFile);
+
+ 
+
+       openAction = new QAction(tr("&Open..."), this);
+
+       openAction->setShortcuts(QKeySequence::Open);
+
+       connect(openAction, &QAction::triggered, this, &TextEditor::open);
+
+ 
+
+       saveAction = new QAction(tr("&Save"), this);
+
+       saveAction->setShortcuts(QKeySequence::Save);
+
+      connect(saveAction, &QAction::triggered, this, &TextEditor::save);
+
+ 
+
+       saveAsAction = new QAction(tr("Save &As..."), this);
+
+       connect(saveAsAction, &QAction::triggered, this, &TextEditor::saveAs);
+
+   }
+
+ 
+
+   void createMenus() {
+
+       fileMenu = menuBar()->addMenu(tr("&File"));
+
+       fileMenu->addAction(newAction);
+
+       fileMenu->addAction(openAction);
+
+       fileMenu->addAction(saveAction);
+
+       fileMenu->addAction(saveAsAction);
+
+   }
+
+ 
+
+   QTextEdit *textEdit;
+
+   QString currentFile;
+
+ 
+
+   QMenu *fileMenu;
+
+   QAction *newAction;
+
+   QAction *openAction;
+
+   QAction *saveAction;
+
+   QAction *saveAsAction;
+
 };
 
  
 
-std::vector<Task> tasks;
+int main(int argc, char *argv[]) {
+
+   QApplication app(argc, argv);
 
  
 
-void displayMenu() {
-    std::cout << "\nTo-Do List Application\n"
-<< "1. Add Task\n"
-<< "2. View Tasks\n"
-<< "3. Mark Task as Completed\n"
-<< "4. Quit\n"
-<< "Enter your choice: ";
-}
+   TextEditor editor;
+
+   editor.show();
 
  
 
-void addTask() {
-    std::string description;
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-    std::cout << "Enter task description: ";
-    std::getline(std::cin, description);
-    tasks.push_back({description, false});
-    std::cout << "Task added successfully!\n";
-}
+   return app.exec();
 
- 
-
-void viewTasks() {
-    if (tasks.empty()) {
-        std::cout << "No tasks to display.\n";
-    } else {
-        std::cout << "\nTask List:\n";
-        for (size_t i = 0; i < tasks.size(); ++i) {
-            std::cout << i + 1 << ". " << (tasks[i].completed ? "[X] " : "[ ] ") << tasks[i].description << '\n';
-        }
-    }
-}
-
- 
-
-void markTaskCompleted() {
-    viewTasks();
-    if (!tasks.empty()) {
-        std::cout << "Enter the task number to mark as completed: ";
-        int taskNumber;
-        std::cin >> taskNumber;
-
- 
-
-        if (taskNumber >= 1 && taskNumber <= static_cast<int>(tasks.size())) {
-            tasks[taskNumber - 1].completed = true;
-            std::cout << "Task marked as completed!\n";
-        } else {
-            std::cout << "Invalid task number.\n";
-        }
-    }
-}
-
- 
-
-int main() {
-    int choice;
-    do {
-        displayMenu();
-        std::cin >> choice;
-
- 
-
-        switch (choice) {
-            case 1:
-                addTask();
-                break;
-            case 2:
-                viewTasks();
-                break;
-            case 3:
-                markTaskCompleted();
-                break;
-            case 4:
-                std::cout << "Goodbye!\n";
-                break;
-            default:
-                std::cout << "Invalid choice. Try again.\n";
-        }
-    } while (choice != 4);
-
- 
-
-    return 0;
 }
